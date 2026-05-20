@@ -20,7 +20,7 @@ In Enchant, go to **Settings → API** and install the API app. Copy the generat
 
 ### 3. Store credentials
 
-Create `~/.enchant-mcp.env` (keep this file private — `chmod 600 ~/.enchant-mcp.env`):
+Create `~/.enchant-api-mcp.env` (keep this file private — `chmod 600 ~/.enchant-api-mcp.env`):
 
 ```bash
 ENCHANT_TOKEN=your-token-here
@@ -53,7 +53,7 @@ Add to your MCP client config (`~/Library/Application Support/Claude/claude_desk
 | `ENCHANT_SITE` | Your Enchant subdomain (e.g. `mycompany` for `mycompany.enchant.com`) |
 | `ENCHANT_USER_EMAIL` | Your Enchant user email — used to identify "you" for message attribution |
 
-Set these in `~/.enchant-mcp.env` or as regular environment variables (env vars take precedence). The server verifies `ENCHANT_USER_EMAIL` against the users list at startup and exits with a clear error if it doesn't match any known user.
+Set these in `~/.enchant-api-mcp.env` or as regular environment variables (env vars take precedence). The server verifies `ENCHANT_USER_EMAIL` against the users list at startup and exits with a clear error if it doesn't match any known user.
 
 ## Claude Code: skip permission prompts (optional)
 

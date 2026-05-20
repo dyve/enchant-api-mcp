@@ -7,10 +7,10 @@ import { join } from "path";
 import { z } from "zod";
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-// Reads credentials from ~/.enchant-mcp.env (KEY=VALUE format) if env vars are
+// Reads credentials from ~/.enchant-api-mcp.env (KEY=VALUE format) if env vars are
 // not already set. Explicit env vars always take precedence.
 
-const ENV_FILE = join(homedir(), ".enchant-mcp.env");
+const ENV_FILE = join(homedir(), ".enchant-api-mcp.env");
 try {
   const text = readFileSync(ENV_FILE, "utf8");
   for (const line of text.split("\n")) {
@@ -364,7 +364,7 @@ addTool(
 
 addTool(
   "list_customers",
-  "List customers with optional filters. Returns paginated results — check page.has_more.",
+  "List customers with optional filters. Returns paginated results — check page.has_more. NOTE: the API does not support filtering by name; the only supported filter is by contact value (email, Twitter handle, or phone number).",
   {
     email:            z.string().optional().describe("Filter by email address"),
     page:             z.number().int().optional().describe("Page number (starts at 1)"),
