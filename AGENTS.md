@@ -1,0 +1,30 @@
+# enchant-api-mcp — Agent Guide
+
+This MCP server exposes the Enchant help desk API to Claude Code and other agents. Read this before using the tools.
+
+## Identity
+
+The server resolves the current user at startup from `ENCHANT_USER_EMAIL`. Call `get_me` to see your resolved user ID and name. All message creation tools (`create_note`, `create_reply`) default `user_id` to you — only override if you intentionally need to attribute a message to someone else.
+
+## Creating messages
+
+- Internal notes → `create_note` (visible to team only)
+- Outbound reply to customer → `create_reply`
+- Recording an inbound customer message → `create_inbound_reply`
+- All message bodies can be plain text (`htmlized: false`) or HTML (`htmlized: true`)
+
+## Pagination
+
+Every list tool returns `{ items, count, page: { has_more, next_page? } }`. Always check `page.has_more` before assuming completeness. Use `per_page` (max 100) and increment `page` to fetch subsequent pages. For large datasets (>10,000), use `since_created_at` instead of high page numbers.
+
+## Ticket embedding
+
+`get_ticket` accepts an `embed` parameter. Use `embed: "messages"` to get a ticket and all its messages in one call. Other embeds: `user`, `inbox`, `customer`, `labels`.
+
+## Finding customers by email
+
+Use `list_customers` with the `email` parameter to look up a customer by their email address before creating a new one.
+
+## Rate limits
+
+100 credits/minute, burst of 6/second. Each request costs 1 credit. If you hit a 429, wait before retrying — do not retry in a tight loop.
