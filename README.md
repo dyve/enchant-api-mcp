@@ -18,7 +18,7 @@ npm install
 
 In Enchant, go to **Settings → API** and install the API app. Copy the generated token.
 
-### 3. Store credentials securely
+### 3. Store credentials
 
 Create `~/.enchant-mcp.env` (keep this file private — `chmod 600 ~/.enchant-mcp.env`):
 
@@ -28,17 +28,7 @@ ENCHANT_SITE=yoursite
 ENCHANT_USER_EMAIL=you@yourcompany.com
 ```
 
-Then create a wrapper script `enchant-mcp.sh` somewhere on your path (e.g. `~/.local/bin/enchant-mcp.sh`, `chmod +x`):
-
-```bash
-#!/bin/bash
-set -a
-source ~/.enchant-mcp.env
-set +a
-exec node /path/to/enchant-api-mcp/src/index.js
-```
-
-Storing credentials in a separate file (rather than inline in the MCP config) keeps your token out of `claude_desktop_config.json`, which is readable by any process on the machine.
+The server reads this file at startup. Credentials never need to appear in your MCP config.
 
 ### 4. Configure Claude Desktop
 
@@ -48,7 +38,8 @@ Add to your MCP client config (`~/Library/Application Support/Claude/claude_desk
 {
   "mcpServers": {
     "enchant": {
-      "command": "/path/to/enchant-mcp.sh"
+      "command": "node",
+      "args": ["/path/to/enchant-api-mcp/src/index.js"]
     }
   }
 }
@@ -62,7 +53,7 @@ Add to your MCP client config (`~/Library/Application Support/Claude/claude_desk
 | `ENCHANT_SITE` | Your Enchant subdomain (e.g. `mycompany` for `mycompany.enchant.com`) |
 | `ENCHANT_USER_EMAIL` | Your Enchant user email — used to identify "you" for message attribution |
 
-The server verifies `ENCHANT_USER_EMAIL` against the users list at startup and exits with a clear error if it doesn't match any known user.
+Set these in `~/.enchant-mcp.env` or as regular environment variables (env vars take precedence). The server verifies `ENCHANT_USER_EMAIL` against the users list at startup and exits with a clear error if it doesn't match any known user.
 
 ## Claude Code: skip permission prompts (optional)
 

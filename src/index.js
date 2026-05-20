@@ -1,17 +1,33 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { readFileSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
 import { z } from "zod";
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
+// Reads credentials from ~/.enchant-mcp.env (KEY=VALUE format) if env vars are
+// not already set. Explicit env vars always take precedence.
 
-const ENCHANT_TOKEN = process.env.ENCHANT_TOKEN;
-const ENCHANT_SITE  = process.env.ENCHANT_SITE;
+const ENV_FILE = join(homedir(), ".enchant-mcp.env");
+try {
+  const text = readFileSync(ENV_FILE, "utf8");
+  for (const line of text.split("\n")) {
+    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
+  }
+} catch {
+  // File not present — fall through to env var validation below
+}
+
+const ENCHANT_TOKEN      = process.env.ENCHANT_TOKEN;
+const ENCHANT_SITE       = process.env.ENCHANT_SITE;
 const ENCHANT_USER_EMAIL = process.env.ENCHANT_USER_EMAIL;
 
-if (!ENCHANT_TOKEN) { console.error("ENCHANT_TOKEN env var is required"); process.exit(1); }
-if (!ENCHANT_SITE)  { console.error("ENCHANT_SITE env var is required"); process.exit(1); }
-if (!ENCHANT_USER_EMAIL) { console.error("ENCHANT_USER_EMAIL env var is required"); process.exit(1); }
+if (!ENCHANT_TOKEN)      { console.error(`ENCHANT_TOKEN is required. Set it in ${ENV_FILE}`); process.exit(1); }
+if (!ENCHANT_SITE)       { console.error(`ENCHANT_SITE is required. Set it in ${ENV_FILE}`); process.exit(1); }
+if (!ENCHANT_USER_EMAIL) { console.error(`ENCHANT_USER_EMAIL is required. Set it in ${ENV_FILE}`); process.exit(1); }
 
 const BASE_URL = `https://${ENCHANT_SITE}.enchant.com/api/v1`;
 
