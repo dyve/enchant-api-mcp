@@ -32,9 +32,24 @@ ENCHANT_USER_EMAIL=you@yourcompany.com
 
 The server reads this file at startup. Credentials never need to appear in your MCP config.
 
-### 4. Configure Claude Desktop
+### 4. Configure your MCP host
 
-Add to your MCP client config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+#### Claude Desktop / Cowork
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "enchant": {
+      "command": "npx",
+      "args": ["enchant-api-mcp"]
+    }
+  }
+}
+```
+
+If you have a local clone instead of using `npx`:
 
 ```json
 {
@@ -45,6 +60,12 @@ Add to your MCP client config (`~/Library/Application Support/Claude/claude_desk
     }
   }
 }
+```
+
+#### Claude Code
+
+```sh
+claude mcp add enchant -- npx enchant-api-mcp
 ```
 
 ## Environment variables

@@ -25,9 +25,9 @@ const ENCHANT_TOKEN      = process.env.ENCHANT_TOKEN;
 const ENCHANT_SITE       = process.env.ENCHANT_SITE;
 const ENCHANT_USER_EMAIL = process.env.ENCHANT_USER_EMAIL;
 
-if (!ENCHANT_TOKEN)      { console.error(`ENCHANT_TOKEN is required. Set it in ${ENV_FILE}`); process.exit(1); }
-if (!ENCHANT_SITE)       { console.error(`ENCHANT_SITE is required. Set it in ${ENV_FILE}`); process.exit(1); }
-if (!ENCHANT_USER_EMAIL) { console.error(`ENCHANT_USER_EMAIL is required. Set it in ${ENV_FILE}`); process.exit(1); }
+if (!ENCHANT_TOKEN)      { console.error(`ENCHANT_TOKEN is required (your API token from Enchant Settings → API). Set it in ${ENV_FILE}`); process.exit(1); }
+if (!ENCHANT_SITE)       { console.error(`ENCHANT_SITE is required (e.g. 'mycompany' for mycompany.enchant.com). Set it in ${ENV_FILE}`); process.exit(1); }
+if (!ENCHANT_USER_EMAIL) { console.error(`ENCHANT_USER_EMAIL is required (your Enchant login email). Set it in ${ENV_FILE}`); process.exit(1); }
 
 const BASE_URL = `https://${ENCHANT_SITE}.enchant.com/api/v1`;
 
