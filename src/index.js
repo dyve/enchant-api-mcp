@@ -55,7 +55,12 @@ async function enchantFetch(method, path, { params, body } = {}) {
   const res = await fetch(url, init);
   if (res.status === 204) return null;
   const text = await res.text();
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${text}`);
+  if (!res.ok) {
+    const err = new Error(`HTTP ${res.status}: ${text}`);
+    err.status = res.status;
+    err.retryAfter = res.headers.get("Retry-After") ?? null;
+    throw err;
+  }
   if (!text) return null;
   return JSON.parse(text);
 }
@@ -104,7 +109,12 @@ function addTool(name, description, schema, handler) {
     try {
       return await handler(args);
     } catch (e) {
-      return fail(`Enchant error: ${e.message}`);
+      const status = e.status ?? null;
+      const retryable = status != null && (status === 429 || status >= 500);
+      const msg = `Enchant error: ${e.message}`
+        + (e.retryAfter ? ` (retry after ${e.retryAfter}s)` : "");
+      return { content: [{ type: "text", text: msg }], isError: true,
+               _meta: { status, retryable, ...(e.retryAfter && { retry_after: e.retryAfter }) } };
     }
   });
 }
@@ -145,7 +155,28 @@ addTool(
   {},
   async () => {
     const users = await enchantFetch("GET", "/users");
-    return ok(users);
+    const compact = (users || []).map(({ id, first_name, last_name, email }) => ({ id, first_name, last_name, email }));
+    return ok(compact);
+  },
+);
+
+addTool(
+  "list_inboxes",
+  "List all inboxes. Use this to find inbox IDs needed for create_ticket or list_tickets filters.",
+  {},
+  async () => {
+    const inboxes = await enchantFetch("GET", "/inboxes");
+    return ok(inboxes);
+  },
+);
+
+addTool(
+  "list_labels",
+  "List all labels. Use this to find label IDs needed for add_ticket_labels, remove_ticket_labels, or list_tickets filters.",
+  {},
+  async () => {
+    const labels = await enchantFetch("GET", "/labels");
+    return ok(labels);
   },
 );
 
@@ -180,10 +211,10 @@ addTool(
   "Get a single ticket by ID. Use embed to include related resources.",
   {
     ticket_id: z.string().describe("Ticket ID"),
-    embed:     z.string().optional().describe("Comma-separated resources to embed: user, inbox, customer, labels, messages"),
+    embed:     z.array(z.enum(["customer", "user", "inbox", "labels", "messages"])).optional().describe("Resources to embed"),
   },
   async ({ ticket_id, embed }) => {
-    const params = embed ? { embed } : undefined;
+    const params = embed?.length ? { embed: embed.join(",") } : undefined;
     const ticket = await enchantFetch("GET", `/tickets/${ticket_id}`, { params });
     return ok(ticket);
   },
@@ -211,8 +242,9 @@ addTool(
 
 addTool(
   "create_ticket",
-  "Create a new email ticket.",
+  "Create a new ticket.",
   {
+    type:        z.enum(["email", "chat", "twitter", "phone"]).optional().describe("Ticket type (default: email)"),
     subject:     z.string().describe("Ticket subject"),
     customer_id: z.string().optional().describe("Existing customer ID"),
     customer:    z.object({
@@ -228,9 +260,9 @@ addTool(
       htmlized:  z.boolean(),
     })).optional().describe("Initial messages to attach"),
   },
-  async ({ subject, customer_id, customer, user_id, inbox_id, messages }) => {
+  async ({ type, subject, customer_id, customer, user_id, inbox_id, messages }) => {
     const body = {
-      type: "email",
+      type: type ?? "email",
       subject,
       user_id: user_id ?? ME.id,
       ...(customer_id && { customer_id }),
