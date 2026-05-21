@@ -2,6 +2,8 @@
 
 MCP server for the [Enchant](https://enchant.com) help desk REST API. Enables Claude Desktop, Claude Code, and other MCP-compatible agents to read and manage Enchant tickets, customers, and messages.
 
+**API documentation:** https://dev.enchant.com/api/v1
+
 ## Requirements
 
 - Node.js 18+
@@ -125,7 +127,7 @@ Enchant API tokens are **account-level** — a single token grants access to all
 
 | Tool | Description |
 |------|-------------|
-| `list_customers` | List customers; filter by email |
+| `list_customers` | List customers; filter by contact (email, twitter, phone) |
 | `get_customer` | Get a single customer |
 | `create_customer` | Create a new customer |
 | `update_customer` | Update customer name, summary, or contacts |

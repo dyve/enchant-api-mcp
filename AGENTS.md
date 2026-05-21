@@ -2,6 +2,8 @@
 
 This MCP server exposes the Enchant help desk API to Claude Code and other agents. Read this before using the tools.
 
+**API documentation:** https://dev.enchant.com/api/v1
+
 ## Identity
 
 The server resolves the current user at startup from `ENCHANT_USER_EMAIL`. Call `get_me` to see your resolved user ID and name. All message creation tools (`create_note`, `create_reply`) default `user_id` to you — only override if you intentionally need to attribute a message to someone else.
@@ -21,9 +23,15 @@ Every list tool returns `{ items, count, page: { has_more, next_page? } }`. Alwa
 
 `get_ticket` accepts an `embed` parameter. Use `embed: "messages"` to get a ticket and all its messages in one call. Other embeds: `user`, `inbox`, `customer`, `labels`.
 
-## Finding customers by email
+## Finding customers by contact
 
-Use `list_customers` with the `email` parameter to look up a customer by their email address before creating a new one.
+Use `list_customers` with `contact_type` + `contact_value` to look up a customer before creating a new one. The API supports all three contact types:
+
+- `contact_type: "email", contact_value: "user@example.com"`
+- `contact_type: "twitter", contact_value: "@handle"`
+- `contact_type: "phone", contact_value: "+15551234567"`
+
+Note: filtering by name is not supported by the API.
 
 ## Rate limits
 

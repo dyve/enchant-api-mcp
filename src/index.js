@@ -364,19 +364,20 @@ addTool(
 
 addTool(
   "list_customers",
-  "List customers with optional filters. Returns paginated results — check page.has_more. NOTE: the API does not support filtering by name; the only supported filter is by contact value (email, Twitter handle, or phone number).",
+  "List customers with optional filters. Returns paginated results — check page.has_more. NOTE: the API does not support filtering by name; use contact_type + contact_value to look up by email, Twitter handle, or phone number.",
   {
-    email:            z.string().optional().describe("Filter by email address"),
+    contact_type:     z.enum(["email", "twitter", "phone"]).optional().describe("Contact type to filter by"),
+    contact_value:    z.string().optional().describe("Contact value — email address, @handle, or phone number"),
     page:             z.number().int().optional().describe("Page number (starts at 1)"),
     per_page:         z.number().int().min(0).max(100).optional().describe("Results per page (0-100)"),
     since_created_at: z.string().optional().describe("ISO8601 UTC timestamp — customers created after this time"),
   },
-  async ({ email, page = 1, per_page, since_created_at }) => {
+  async ({ contact_type, contact_value, page = 1, per_page, since_created_at }) => {
     const params = {
       page,
       per_page,
       since_created_at,
-      ...(email && { "contacts.type": "email", "contacts.value": email }),
+      ...(contact_type && contact_value && { "contacts.type": contact_type, "contacts.value": contact_value }),
     };
     const customers = await enchantFetch("GET", "/customers", { params });
     return ok(wrapPaginated(customers || [], { page, perPage: per_page ?? null }));
