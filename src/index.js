@@ -56,7 +56,13 @@ async function enchantFetch(method, path, { params, body } = {}) {
   if (res.status === 204) return null;
   const text = await res.text();
   if (!res.ok) {
-    const err = new Error(`HTTP ${res.status}: ${text}`);
+    let detail = text;
+    try {
+      const json = JSON.parse(text);
+      if (typeof json.error === "string") detail = json.error;
+      else if (json.errors) detail = JSON.stringify(json.errors);
+    } catch { /* keep raw text */ }
+    const err = new Error(`HTTP ${res.status}: ${detail}`);
     err.status = res.status;
     err.retryAfter = res.headers.get("Retry-After") ?? null;
     throw err;
@@ -242,7 +248,7 @@ addTool(
 
 addTool(
   "create_ticket",
-  "Create a new ticket.",
+  "Create a new ticket (no initial message). To add a first message call create_inbound_reply (customer-sent) or create_reply (agent-sent) immediately after.\n\nTwo-step flow:\n  1. create_ticket         → get ticket_id\n  2. create_inbound_reply / create_reply → attach first message",
   {
     type:        z.enum(["email", "chat", "twitter", "phone"]).optional().describe("Ticket type (default: email)"),
     subject:     z.string().describe("Ticket subject"),
@@ -253,22 +259,16 @@ addTool(
       contacts:   z.array(z.object({ type: z.string(), value: z.string() })).optional(),
     }).optional().describe("Create or match customer by details (used if customer_id omitted)"),
     user_id:     z.string().optional().describe("Assign to user ID (defaults to current user)"),
-    inbox_id:    z.string().optional().describe("Inbox ID"),
-    messages:    z.array(z.object({
-      type:      z.string(),
-      body:      z.string(),
-      htmlized:  z.boolean(),
-    })).optional().describe("Initial messages to attach"),
+    inbox_id:    z.string().describe("Inbox ID — use list_inboxes to find available IDs"),
   },
-  async ({ type, subject, customer_id, customer, user_id, inbox_id, messages }) => {
+  async ({ type, subject, customer_id, customer, user_id, inbox_id }) => {
     const body = {
       type: type ?? "email",
       subject,
       user_id: user_id ?? ME.id,
+      inbox_id,
       ...(customer_id && { customer_id }),
       ...(customer   && { customer }),
-      ...(inbox_id   && { inbox_id }),
-      ...(messages   && { messages }),
     };
     const ticket = await enchantFetch("POST", "/tickets", { body });
     return ok(ticket);
@@ -366,7 +366,7 @@ addTool(
 
 addTool(
   "create_inbound_reply",
-  "Record an inbound reply on a ticket (e.g. a customer response received outside email).",
+  "Record an inbound reply on a ticket (e.g. a customer response received outside email). Note: the API may return htmlized: true in the response even when false was sent — this is server-side normalisation, not an error.",
   {
     ticket_id:      z.string().describe("Ticket ID"),
     from_name:      z.string().describe("Sender display name"),
