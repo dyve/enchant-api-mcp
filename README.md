@@ -78,14 +78,32 @@ claude mcp add enchant -- npx enchant-api-mcp
 
 Set these in `~/.enchant-api-mcp.env` or as regular environment variables (env vars take precedence). The server verifies `ENCHANT_USER_EMAIL` against the users list at startup and exits with a clear error if it doesn't match any known user.
 
-## Claude Code: skip permission prompts (optional)
+These three names are exact and are the only variables the server reads. In particular there is no `ENCHANT_API_KEY` — a value stored under that name is silently ignored, and the server will exit reporting a missing `ENCHANT_TOKEN`.
 
-If you use this server with Claude Code and want to skip per-call permission prompts, add the tools to your allowlist in `~/.claude/settings.json`:
+Do not put the token in a Claude Code `settings.json` `env` block. That file is not created mode `600`, it is often committed to a repository or copied between machines when sharing a setup, and a token in it grants access to your entire Enchant account. Keep it in `~/.enchant-api-mcp.env` with `chmod 600`.
+
+## Claude Code: permissions (optional)
+
+If you use this server with Claude Code, you can pre-declare how each tool is handled in `~/.claude/settings.json`. `allow` runs the tool without asking; `deny` blocks it outright. Anything in neither list falls back to a permission prompt at call time.
+
+The split below allowlists only the read-only tools and denies every tool that changes data. Read-only tools cannot damage anything, so skipping their prompts is safe. The write tools are a different matter — **allowlisting `create_reply` means an agent can send real outbound email to your customers with no confirmation**, and `update_ticket`, `delete_contact` and the rest mutate live help desk data the same way.
 
 ```json
 {
   "permissions": {
     "allow": [
+      "mcp__enchant__get_attachment",
+      "mcp__enchant__get_customer",
+      "mcp__enchant__get_me",
+      "mcp__enchant__get_ticket",
+      "mcp__enchant__list_customers",
+      "mcp__enchant__list_inboxes",
+      "mcp__enchant__list_labels",
+      "mcp__enchant__list_messages",
+      "mcp__enchant__list_tickets",
+      "mcp__enchant__list_users"
+    ],
+    "deny": [
       "mcp__enchant__add_ticket_labels",
       "mcp__enchant__create_contact",
       "mcp__enchant__create_customer",
@@ -94,14 +112,6 @@ If you use this server with Claude Code and want to skip per-call permission pro
       "mcp__enchant__create_reply",
       "mcp__enchant__create_ticket",
       "mcp__enchant__delete_contact",
-      "mcp__enchant__get_attachment",
-      "mcp__enchant__get_customer",
-      "mcp__enchant__get_me",
-      "mcp__enchant__get_ticket",
-      "mcp__enchant__list_customers",
-      "mcp__enchant__list_messages",
-      "mcp__enchant__list_tickets",
-      "mcp__enchant__list_users",
       "mcp__enchant__remove_ticket_labels",
       "mcp__enchant__update_customer",
       "mcp__enchant__update_ticket",
@@ -110,6 +120,8 @@ If you use this server with Claude Code and want to skip per-call permission pro
   }
 }
 ```
+
+If you do want an agent to write to Enchant, drop the relevant tools out of `deny` rather than moving them into `allow` — that leaves you with a prompt per call instead of no prompt at all.
 
 ## Authentication note
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { readFileSync } from "fs";
+import { readFileSync, statSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 import { z } from "zod";
@@ -19,6 +19,23 @@ try {
   }
 } catch {
   // File not present — fall through to env var validation below
+}
+
+// Warn if the credentials file is readable by anyone other than its owner. The
+// token is account-level, so a leaked copy grants full access to the help desk.
+try {
+  const mode = statSync(ENV_FILE).mode & 0o777;
+  if (mode & 0o077) {
+    console.error(`Warning: ${ENV_FILE} is mode ${mode.toString(8)} — readable beyond its owner. It holds an account-level API token. Run: chmod 600 ${ENV_FILE}`);
+  }
+} catch {
+  // File not present — nothing to check
+}
+
+// ENCHANT_API_KEY is not read by this server. Warn before the fatal checks below
+// so the two appear together when someone is looking at a failed startup.
+if (process.env.ENCHANT_API_KEY) {
+  console.error(`Warning: ENCHANT_API_KEY is set but this server never reads it — the token variable is ENCHANT_TOKEN. Rename it, and remove the stale value from wherever it is defined.`);
 }
 
 const ENCHANT_TOKEN      = process.env.ENCHANT_TOKEN;
