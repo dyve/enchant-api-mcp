@@ -1,0 +1,36 @@
+# Only two direct dependencies, but ~90 packages install transitively through the
+# MCP SDK. Ungrouped, per-dependency updates would produce PRs for churn that
+# cannot be acted on independently — the transitive tree moves when the SDK moves.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 3
+    # Version updates for direct dependencies only. Security updates are a
+    # separate repository setting and are NOT limited by this filter, so
+    # transitive advisories still surface — they are just not chased on a
+    # schedule.
+    allow:
+      - dependency-type: direct
+    groups:
+      # One PR for routine movement, so it can be reviewed and smoke-tested once.
+      minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    ignore:
+      # zod 4 is a real migration, not a merge: every tool schema in
+      # src/index.js is built with zod, and the MCP SDK accepts both
+      # (`^3.25 || ^4.0`), so there is no forcing function. Do it deliberately,
+      # once, with `npm test` green against a live account.
+      - dependency-name: "zod"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 2
