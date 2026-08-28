@@ -8,11 +8,17 @@ This MCP server exposes the Enchant help desk API to Claude Code and other agent
 
 The server resolves the current user at startup from `ENCHANT_USER_EMAIL`. Call `get_me` to see your resolved user ID and name. All message creation tools (`create_note`, `create_reply`) default `user_id` to you — only override if you intentionally need to attribute a message to someone else.
 
+## Read vs write tools
+
+Read-only, no side effects: `get_me`, `list_users`, `list_inboxes`, `list_labels`, `list_tickets`, `get_ticket`, `list_messages`, `list_customers`, `get_customer`, `get_attachment`.
+
+Everything else changes live help desk data: `create_ticket`, `update_ticket`, `add_ticket_labels`, `remove_ticket_labels`, `create_note`, `create_reply`, `create_inbound_reply`, `create_customer`, `update_customer`, `create_contact`, `delete_contact`, `upload_attachment`. Confirm with the user before calling any of them unless they have already asked for that specific change.
+
 ## Creating messages
 
 - Internal notes → `create_note` (visible to team only)
-- Outbound reply to customer → `create_reply`
-- Recording an inbound customer message → `create_inbound_reply`
+- Outbound reply to customer → `create_reply` — **this sends a real email to the customer immediately.** There is no draft state and no undo. Never call it to test, explore, or guess at wording; get the exact body approved by the user first.
+- Recording an inbound customer message → `create_inbound_reply` (writes a message into the ticket as if received from the customer; sends nothing, but falsifies the conversation record if used carelessly)
 - All message bodies can be plain text (`htmlized: false`) or HTML (`htmlized: true`)
 
 ## Pagination
